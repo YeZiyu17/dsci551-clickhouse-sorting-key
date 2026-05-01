@@ -1,0 +1,55 @@
+DSCI 551 Project - ClickHouse Setup Instructions
+
+Files used:
+- README.md
+- schema.sql
+- data.sql
+- demo.sql
+- instructions.txt
+
+Prerequisites:
+- Docker
+- A terminal or command-line shell
+- Internet access to pull the ClickHouse Docker image
+
+No secret keys, API keys, credentials, tokens, or environment variables are required.
+
+1. Start a new ClickHouse container.
+
+   docker run -d --name clickhouse \
+     --ulimit nofile=262144:262144 \
+     -p 8123:8123 -p 9000:9000 \
+     clickhouse/clickhouse-server:latest
+
+2. Verify that ClickHouse is running.
+
+   docker exec clickhouse clickhouse-client --query "SELECT version();"
+
+3. Create the tables.
+
+   docker exec -i clickhouse clickhouse-client --multiquery < schema.sql
+
+4. Generate and load the synthetic dataset.
+
+   docker exec -i clickhouse clickhouse-client --multiquery < data.sql
+
+5. Run the demo queries.
+
+   docker exec -i clickhouse clickhouse-client --multiquery < demo.sql
+
+Expected results:
+- Both experiment tables should contain 2,000,000 rows.
+- The time_first and country_first layouts should return the same logical query results because they contain identical data.
+- For recent time-window queries, exp_user_events_time_first is expected to read fewer rows and bytes than exp_user_events_country_first.
+- demo.sql prints scan statistics from system.query_log, including read_rows and read_bytes.
+
+Rerun notes:
+- schema.sql drops and recreates both tables.
+- data.sql truncates both tables before loading data.
+- demo.sql can be rerun after data is loaded.
+
+If a container named clickhouse already exists and you want to restart from scratch, run:
+
+   docker rm -f clickhouse
+
+Then start again from Step 1.
